@@ -52,7 +52,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	// Step 3: Create worker threads based on the number of processors available on the
 	// system. Create two worker threads for each processor	
-	for (int i = 0; i < (int)systemInfo.dwNumberOfProcessors * 2; i++) {
+	for (int i = 7; i < (int)systemInfo.dwNumberOfProcessors * 2; i++) {
 		// Create a server worker thread and pass the completion port to the thread
 		if (_beginthreadex(0, 0, serverWorkerThread, (void*)completionPort, 0, 0) == 0) {
 			printf("Create thread failed with error %d\n", GetLastError());
@@ -134,6 +134,7 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 	DWORD flags;
 
 	while (TRUE) {
+
 		if (GetQueuedCompletionStatus(completionPort, &transferredBytes,
 			(LPDWORD)&perHandleData, (LPOVERLAPPED *)&perIoData, INFINITE) == 0) {
 			printf("GetQueuedCompletionStatus() failed with error %d\n", GetLastError());
@@ -159,54 +160,54 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 			perIoData->recvBytes = transferredBytes;
 			perIoData->sentBytes = 0;
 			perIoData->operation = SEND;
-			//handleMess(perIoData->buffer, perHandleData->socket, perHandleData->state);
 			handleMess(perIoData, perHandleData);
 		}
 		else if (perIoData->operation == SEND) {
 			perIoData->sentBytes += transferredBytes;
-		}
 
-		if (perIoData->recvBytes > perIoData->sentBytes) {
-			// Post another WSASend() request.
-			// Since WSASend() is not guaranteed to send all of the bytes requested,
-			// continue posting WSASend() calls until all received bytes are sent.
-			ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
-			perIoData->dataBuff.buf = perIoData->buffer + perIoData->sentBytes;
-			perIoData->dataBuff.len = perIoData->recvBytes - perIoData->sentBytes;
-			perIoData->operation = SEND;
+			if (sizeof(Message) > perIoData->sentBytes) {
+				// Post another WSASend() request.
+				// Since WSASend() is not guaranteed to send all of the bytes requested,
+				// continue posting WSASend() calls until all received bytes are sent.
+				ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
+				perIoData->dataBuff.buf = perIoData->buffer + perIoData->sentBytes;
+				perIoData->dataBuff.len = perIoData->recvBytes - perIoData->sentBytes;
+				perIoData->operation = SEND;
 
-			if (WSASend(perHandleData->socket,
-				&(perIoData->dataBuff),
-				1,
-				&transferredBytes,
-				0,
-				&(perIoData->overlapped),
-				NULL) == SOCKET_ERROR) {
-				if (WSAGetLastError() != ERROR_IO_PENDING) {
-					printf("WSASend() failed with error %d\n", WSAGetLastError());
-					return 0;
+				if (WSASend(perHandleData->socket,
+					&(perIoData->dataBuff),
+					1,
+					&transferredBytes,
+					0,
+					&(perIoData->overlapped),
+					NULL) == SOCKET_ERROR) {
+					if (WSAGetLastError() != ERROR_IO_PENDING) {
+						printf("WSASend() failed with error %d\n", WSAGetLastError());
+						return 0;
+					}
+				}
+			}
+			else {
+				// No more bytes to send post another WSARecv() request
+				perIoData->recvBytes = 0;
+				perIoData->operation = RECEIVE;
+				flags = 0;
+				ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
+				perIoData->dataBuff.len = DATA_BUFSIZE;
+				perIoData->dataBuff.buf = perIoData->buffer;
+				if (WSARecv(perHandleData->socket,
+					&(perIoData->dataBuff),
+					1,
+					&transferredBytes,
+					&flags,
+					&(perIoData->overlapped), NULL) == SOCKET_ERROR) {
+					if (WSAGetLastError() != ERROR_IO_PENDING) {
+						printf("WSARecv() failed with error %d\n", WSAGetLastError());
+						return 0;
+					}
 				}
 			}
 		}
-		else {
-			// No more bytes to send post another WSARecv() request
-			perIoData->recvBytes = 0;
-			perIoData->operation = RECEIVE;
-			flags = 0;
-			ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
-			perIoData->dataBuff.len = DATA_BUFSIZE;
-			perIoData->dataBuff.buf = perIoData->buffer;
-			if (WSARecv(perHandleData->socket,
-				&(perIoData->dataBuff),
-				1,
-				&transferredBytes,
-				&flags,
-				&(perIoData->overlapped), NULL) == SOCKET_ERROR) {
-				if (WSAGetLastError() != ERROR_IO_PENDING) {
-					printf("WSARecv() failed with error %d\n", WSAGetLastError());
-					return 0;
-				}
-			}
-		}
+
 	}
 }

@@ -15,20 +15,15 @@
 #pragma comment(lib,"Ws2_32.lib")
 using namespace std;
 
-enum messType { LOGIN = 5, LOGOUT = 8, TIM_NGUOI_CHOI, THACH_DAU, TRA_LOI_THACH_DAU, GUI_NUOC_DI };
-enum code { SUCCESS = 0, INCORRECT_USER_NAME_OR_PASSWORD = 10, ACC_HAS_BLOCKED = 12, LOGGED_IN, NOT_LOGGED_IN, ALLREADY_LOGGED_IN };
 
 
-struct Message {
-	int messType; //opcode
-	int code;	// success or false
-	char userName[30];
-	char passWord[30];
-	char move[4];
-	char opponent[60]; // name of opponent
-};
+void handleLogin(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	
+	Message *mess =(Message*) perIoData->buffer;
+	SOCKET s = perHandleData->socket;
+	bool &state = perHandleData->state;
+	Message *message = (Message*)mess;
 
-void handleLogin(Message *mess, SOCKET s, bool& state) {
 	cout << "handling login" << endl;
 
 	mess->code = INCORRECT_USER_NAME_OR_PASSWORD;
@@ -65,9 +60,16 @@ void handleLogin(Message *mess, SOCKET s, bool& state) {
 	cout << "password is " << mess->passWord << endl;
 	cout << strcmp(mess->passWord, "admin") << endl;
 	cout << "send " << mess->code << endl;
+	sendMess(perIoData, perHandleData);
 }
 
-void handleLogout(Message *mess, SOCKET s, bool& state) {
+void handleLogout(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+
+	Message *mess = (Message*)perIoData->buffer;
+	SOCKET s = perHandleData->socket;
+	bool &state = perHandleData->state;
+	Message *message = (Message*)mess;
+
 	cout << "handling longout";
 	if (state == true) {
 		mess->code = SUCCESS;
@@ -79,40 +81,65 @@ void handleLogout(Message *mess, SOCKET s, bool& state) {
 	}
 	else mess->code = NOT_LOGGED_IN;
 	cout << "send " << mess->code << endl;
+	sendMess(perIoData, perHandleData);
 }
-void xuTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
-	DWORD transferredBytes = sizeof(Message);
+void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*) perIoData->buffer;
 	mess->opponent[0] = 0;
+	mess->code = SUCCESS;
 	for (account acc : listAcc) {
-		if (acc.sockNumber != 0 && acc.ranh == 1) {
+		if (acc.sockNumber != 0 && acc.ranh == true) {
 			strcat(mess->opponent, acc.userName);
 			strcat(mess->opponent, " \0");
 		}
 	}
-	ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
-	perIoData->dataBuff.buf = perIoData->buffer + perIoData->sentBytes;
-	perIoData->dataBuff.len = perIoData->recvBytes - perIoData->sentBytes;
-	perIoData->operation = SEND;
+	sendMess(perIoData, perHandleData);
+}
 
-	if (WSASend(perHandleData->socket,
-		&(perIoData->dataBuff),
-		1,
-		&transferredBytes,
-		0,
-		&(perIoData->overlapped),
-		NULL) == SOCKET_ERROR) {
-		if (WSAGetLastError() != ERROR_IO_PENDING) {
-			printf("WSASend() failed with error %d\n", WSAGetLastError());
+void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	
+	Message *mess = (Message*)perIoData->buffer;
+	char name[30];
+
+	//lay ten cua thang thach dau
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber==perHandleData->socket) {
+			strcpy(name, listAcc[i].userName);
+		}
+	}
+
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (strcmp(listAcc[i].userName,mess->opponent)==0) {
+			perHandleData->socket = listAcc[i].sockNumber;
+			strcpy(mess->opponent, name);
+			sendMess(perIoData, perHandleData);
+			break;
+		}
+	}
+}
+void xuLyChoThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber == perHandleData->socket) {
+			listAcc[i].ranh = true;
 		}
 	}
 }
 
-void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
-
-}
 void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	Message *mess = (Message*)perIoData->buffer;
+	if (mess->code == ACCEPT) {
+		mess->code = SUCCESS;
+		sendMess(perIoData, perHandleData);
 
+		for (int i = 0; i < listAcc.size(); i++) {
+			if (strcmp(listAcc[i].userName, mess->opponent) == 0) {
+				perHandleData->socket = listAcc[i].sockNumber;
+				sendMess(perIoData, perHandleData);
+				break;
+			}
+		}
+
+	}
 }
 void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 
@@ -139,22 +166,30 @@ void handleMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleDa
 	SOCKET s = perHandleData->socket;
 	bool &state = perHandleData->state;
 	Message *message = (Message*)mess;
+
 	switch (message->messType)
 	{
 	case LOGIN:
-		handleLogin(message, s, state);
+		handleLogin(perIoData, perHandleData);
 		break;
 	case LOGOUT:
-		handleLogout(message, s, state);
+		handleLogout(perIoData, perHandleData);
 		break;
 	case TIM_NGUOI_CHOI:
-		xuTimNguoiChoi(perIoData, perHandleData);
+		xuLyTimNguoiChoi(perIoData, perHandleData);
+		break;
+	case CHO_THACH_DAU:
+		xuLyChoThachDau(perIoData, perHandleData);
+		break;
 	case THACH_DAU:
 		xuLyThachDau(perIoData, perHandleData);
+		break;
 	case TRA_LOI_THACH_DAU:
 		xuLyTraLoiThachDau(perIoData, perHandleData);
+		break;
 	case GUI_NUOC_DI:
 		xuLyNuocDi(perIoData, perHandleData);
+		break;
 	default:
 		break;
 	}

@@ -26,8 +26,9 @@ struct Message {
 	int code;	// success or false
 	char userName[30];
 	char passWord[30];
-	char move[4];
+	char move[5];
 	char opponent[60]; // name of opponent
+	int color;
 };
 
 

@@ -129,11 +129,13 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 	Message *mess = (Message*)perIoData->buffer;
 	if (mess->code == ACCEPT) {
 		mess->code = SUCCESS;
+		mess->color = 1;
 		sendMess(perIoData, perHandleData);
 
 		for (int i = 0; i < listAcc.size(); i++) {
 			if (strcmp(listAcc[i].userName, mess->opponent) == 0) {
 				perHandleData->socket = listAcc[i].sockNumber;
+				mess->color = -1;
 				sendMess(perIoData, perHandleData);
 				break;
 			}
@@ -142,7 +144,8 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 	}
 }
 void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
-
+	Message *mess = (Message*)perIoData->buffer;
+	cout << "\nnhan duoc nuoc di: " << mess->move << endl;
 }
 
 

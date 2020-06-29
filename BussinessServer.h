@@ -123,6 +123,7 @@ void xuLyChoThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHan
 			listAcc[i].ranh = true;
 		}
 	}
+	recvMess(perIoData, perHandleData);
 }
 
 void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
@@ -145,7 +146,8 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 }
 void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
-	cout << "\nnhan duoc nuoc di: " << mess->move << endl;
+	cout << "\nnhan duoc nuoc di: " << mess->move <<"   " <<perHandleData->socket<<endl;
+	sendMess(perIoData,perHandleData);
 }
 
 

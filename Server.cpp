@@ -93,7 +93,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 		// Step 7: Associate the accepted socket with the original completion port
-		printf("Socket number %d got connected...\n", acceptSock);
+		printf("\nSocket number %d got connected...\n", acceptSock);
 		perHandleData->socket = acceptSock;
 		if (CreateIoCompletionPort((HANDLE)acceptSock, completionPort, (DWORD)perHandleData, 0) == NULL) {
 			printf("CreateIoCompletionPort() failed with error %d\n", GetLastError());
@@ -132,6 +132,7 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 	LPPER_HANDLE_DATA perHandleData;
 	LPPER_IO_OPERATION_DATA perIoData;
 	DWORD flags;
+	SOCKET s;
 
 	while (TRUE) {
 
@@ -157,6 +158,8 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 		// this means a WSARecv call just completed so update the recvBytes field
 		// with the transferredBytes value from the completed WSARecv() call
 		if (perIoData->operation == RECEIVE) {
+			s = perHandleData->socket;
+			printf("\nNhan goi tin socket: %d\n", perHandleData->socket);
 			perIoData->recvBytes = transferredBytes;
 			perIoData->sentBytes = 0;
 			perIoData->operation = SEND;
@@ -195,7 +198,8 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 				ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
 				perIoData->dataBuff.len = DATA_BUFSIZE;
 				perIoData->dataBuff.buf = perIoData->buffer;
-				if (WSARecv(perHandleData->socket,
+				printf("Goi ham wsarecv cho socket: %d\n", s);
+				if (WSARecv(s,
 					&(perIoData->dataBuff),
 					1,
 					&transferredBytes,

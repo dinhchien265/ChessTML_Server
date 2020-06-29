@@ -139,3 +139,24 @@ void sendMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData
 		}
 	}
 }
+void recvMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	DWORD flags;
+	DWORD transferredBytes;
+	perIoData->recvBytes = 0;
+	perIoData->operation = RECEIVE;
+	flags = 0;
+	ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
+	perIoData->dataBuff.len = DATA_BUFSIZE;
+	perIoData->dataBuff.buf = perIoData->buffer;
+	printf("\nGoi ham wsarecv cho socket: %d", perHandleData->socket);
+	if (WSARecv(perHandleData->socket,
+		&(perIoData->dataBuff),
+		1,
+		&transferredBytes,
+		&flags,
+		&(perIoData->overlapped), NULL) == SOCKET_ERROR) {
+		if (WSAGetLastError() != ERROR_IO_PENDING) {
+			printf("WSARecv() failed with error %d\n", WSAGetLastError());
+		}
+	}
+}

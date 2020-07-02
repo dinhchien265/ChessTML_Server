@@ -6,6 +6,7 @@
 #include <WS2tcpip.h>
 #include <iostream>
 #include "DataIOServer.h"
+#include <vector>
 #define SERVER_PORT 5500
 #define SERVER_ADDR "127.0.0.1"
 #define BUFF_SIZE 2048
@@ -15,6 +16,28 @@
 #pragma comment(lib,"Ws2_32.lib")
 using namespace std;
 
+vector<LPPER_HANDLE_DATA> listHandleData;
+
+LPPER_HANDLE_DATA findHandleData(SOCKET s) {
+	for (LPPER_HANDLE_DATA perHandleData : listHandleData) {
+		if (perHandleData->socket == s) return perHandleData;
+	}
+	return NULL;
+}
+
+void copyPerIoData(LPPER_IO_OPERATION_DATA des, LPPER_IO_OPERATION_DATA res) {
+	des->bufLen = res->bufLen;
+	des->recvBytes = res->recvBytes;
+	des->sentBytes = res->sentBytes;
+	des->operation = res->operation;
+	for (int i = 0; i < des->bufLen; i++) {
+		des->buffer[i] = res->buffer[i];
+	}
+	des->dataBuff.len = res->dataBuff.len;
+	for (int i = 0; i < des->dataBuff.len; i++) {
+		des->dataBuff.buf[i] = res->dataBuff.buf[i];
+	}
+}
 
 
 void handleLogin(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
@@ -60,7 +83,8 @@ void handleLogin(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleD
 	cout << "password is " << mess->passWord << endl;
 	cout << strcmp(mess->passWord, "admin") << endl;
 	cout << "send " << mess->code << endl;
-	sendMess(perIoData, perHandleData);
+	sendMess(perIoData, perHandleData->socket);
+	perHandleData->n += 1;
 }
 
 void handleLogout(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
@@ -81,7 +105,8 @@ void handleLogout(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandle
 	}
 	else mess->code = NOT_LOGGED_IN;
 	cout << "send " << mess->code << endl;
-	sendMess(perIoData, perHandleData);
+	sendMess(perIoData, perHandleData->socket);
+	perHandleData->n += 1;
 }
 void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*) perIoData->buffer;
@@ -93,7 +118,8 @@ void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHa
 			strcat(mess->opponent, " \0");
 		}
 	}
-	sendMess(perIoData, perHandleData);
+	sendMess(perIoData, perHandleData->socket);
+	perHandleData->n += 1;
 }
 
 void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
@@ -110,12 +136,14 @@ void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandle
 
 	for (int i = 0; i < listAcc.size(); i++) {
 		if (strcmp(listAcc[i].userName,mess->opponent)==0) {
-			perHandleData->socket = listAcc[i].sockNumber;
 			strcpy(mess->opponent, name);
-			sendMess(perIoData, perHandleData);
+			LPPER_HANDLE_DATA  des=findHandleData(listAcc[i].sockNumber);
+			copyPerIoData(des->perIoData, perIoData);
+			sendMess(des->perIoData, des->socket);
 			break;
 		}
 	}
+	recvMess(perIoData, perHandleData);
 }
 void xuLyChoThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	for (int i = 0; i < listAcc.size(); i++) {
@@ -131,13 +159,16 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 	if (mess->code == ACCEPT) {
 		mess->code = SUCCESS;
 		mess->color = 1;
-		sendMess(perIoData, perHandleData);
+		sendMess(perIoData, perHandleData->socket);
+		perHandleData->n += 1;
 
 		for (int i = 0; i < listAcc.size(); i++) {
 			if (strcmp(listAcc[i].userName, mess->opponent) == 0) {
-				perHandleData->socket = listAcc[i].sockNumber;
-				mess->color = -1;
-				sendMess(perIoData, perHandleData);
+				LPPER_HANDLE_DATA  des = findHandleData(listAcc[i].sockNumber);
+				copyPerIoData(des->perIoData, perIoData);
+				Message* m = (Message*)des->perIoData->buffer;
+				m->color = -1;
+				sendMess(des->perIoData, des->socket);
 				break;
 			}
 		}
@@ -147,7 +178,8 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
 	cout << "\nnhan duoc nuoc di: " << mess->move <<"   " <<perHandleData->socket<<endl;
-	sendMess(perIoData,perHandleData);
+	sendMess(perIoData,perHandleData->socket);
+	perHandleData->n += 1;
 }
 
 

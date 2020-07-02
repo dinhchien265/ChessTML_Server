@@ -32,12 +32,6 @@ struct Message {
 };
 
 
-typedef struct PerHandleData {
-	SOCKET socket;
-	bool state;
-	int **board;
-	PerHandleData * opponent; // thong tin cua doi thu
-} PER_HANDLE_DATA, *LPPER_HANDLE_DATA;
 
 // Structure definition
 typedef struct {
@@ -49,6 +43,15 @@ typedef struct {
 	int sentBytes;
 	int operation;
 } PER_IO_OPERATION_DATA, *LPPER_IO_OPERATION_DATA;
+
+typedef struct PerHandleData {
+	SOCKET socket;
+	bool state;
+	LPPER_IO_OPERATION_DATA perIoData;
+	int **board;
+	int n = 0;
+	PerHandleData * opponent; // thong tin cua doi thu
+} PER_HANDLE_DATA, *LPPER_HANDLE_DATA;
 
 #pragma comment(lib,"Ws2_32.lib")
 using namespace std;
@@ -120,14 +123,14 @@ void updateAccInfo() {
 //	return len;
 //}
 
-void sendMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+void sendMess(LPPER_IO_OPERATION_DATA perIoData, SOCKET s) {
 	DWORD transferredBytes = sizeof(Message);
 	ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
 	perIoData->dataBuff.buf = perIoData->buffer + perIoData->sentBytes;
 	perIoData->dataBuff.len = perIoData->recvBytes - perIoData->sentBytes;
 	perIoData->operation = SEND;
 
-	if (WSASend(perHandleData->socket,
+	if (WSASend(s,
 		&(perIoData->dataBuff),
 		1,
 		&transferredBytes,

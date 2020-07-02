@@ -9,14 +9,14 @@
 #include <conio.h>
 #include "BussinessServer.h"
 #include "DataIOServer.h"
+#include <vector>
 
-#define PORT 5500
 #define DATA_BUFSIZE 8192
+#define PORT 5500
 #define RECEIVE 0
 #define SEND 1
 
 #pragma comment(lib, "Ws2_32.lib")
-
 
 
 
@@ -114,6 +114,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		perIoData->operation = RECEIVE;
 		flags = 0;
 
+		perHandleData->perIoData = perIoData;
+		listHandleData.push_back(perHandleData);
+
 		if (WSARecv(acceptSock, &(perIoData->dataBuff), 1, &transferredBytes, &flags, &(perIoData->overlapped), NULL) == SOCKET_ERROR) {
 			if (WSAGetLastError() != ERROR_IO_PENDING) {
 				printf("WSARecv() failed with error %d\n", WSAGetLastError());
@@ -132,7 +135,6 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 	LPPER_HANDLE_DATA perHandleData;
 	LPPER_IO_OPERATION_DATA perIoData;
 	DWORD flags;
-	SOCKET s;
 
 	while (TRUE) {
 
@@ -158,7 +160,6 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 		// this means a WSARecv call just completed so update the recvBytes field
 		// with the transferredBytes value from the completed WSARecv() call
 		if (perIoData->operation == RECEIVE) {
-			s = perHandleData->socket;
 			printf("\nNhan goi tin socket: %d\n", perHandleData->socket);
 			perIoData->recvBytes = transferredBytes;
 			perIoData->sentBytes = 0;
@@ -191,23 +192,27 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 				}
 			}
 			else {
-				// No more bytes to send post another WSARecv() request
-				perIoData->recvBytes = 0;
-				perIoData->operation = RECEIVE;
-				flags = 0;
-				ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
-				perIoData->dataBuff.len = DATA_BUFSIZE;
-				perIoData->dataBuff.buf = perIoData->buffer;
-				printf("Goi ham wsarecv cho socket: %d\n", s);
-				if (WSARecv(s,
-					&(perIoData->dataBuff),
-					1,
-					&transferredBytes,
-					&flags,
-					&(perIoData->overlapped), NULL) == SOCKET_ERROR) {
-					if (WSAGetLastError() != ERROR_IO_PENDING) {
-						printf("WSARecv() failed with error %d\n", WSAGetLastError());
-						return 0;
+				perHandleData->n -= 1;
+				if (perHandleData->n <= 0) {
+					perHandleData->n = 0;
+					// No more bytes to send post another WSARecv() request
+					perIoData->recvBytes = 0;
+					perIoData->operation = RECEIVE;
+					flags = 0;
+					ZeroMemory(&(perIoData->overlapped), sizeof(OVERLAPPED));
+					perIoData->dataBuff.len = DATA_BUFSIZE;
+					perIoData->dataBuff.buf = perIoData->buffer;
+					printf("Goi ham wsarecv cho socket: %d\n", perHandleData->socket);
+					if (WSARecv(perHandleData->socket,
+						&(perIoData->dataBuff),
+						1,
+						&transferredBytes,
+						&flags,
+						&(perIoData->overlapped), NULL) == SOCKET_ERROR) {
+						if (WSAGetLastError() != ERROR_IO_PENDING) {
+							printf("WSARecv() failed with error %d\n", WSAGetLastError());
+							return 0;
+						}
 					}
 				}
 			}

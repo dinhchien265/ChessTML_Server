@@ -6,6 +6,7 @@
 #include <WS2tcpip.h>
 #include <iostream>
 #include "DataIOServer.h"
+#include "Rule.h"
 #include <vector>
 #define SERVER_PORT 5500
 #define SERVER_ADDR "127.0.0.1"
@@ -37,6 +38,29 @@ void copyPerIoData(LPPER_IO_OPERATION_DATA des, LPPER_IO_OPERATION_DATA res) {
 	for (int i = 0; i < des->dataBuff.len; i++) {
 		des->dataBuff.buf[i] = res->dataBuff.buf[i];
 	}
+}
+
+int **createNewBoard() {
+	int **board = (int **)malloc(8 * sizeof(int *));
+	for (int i = 0; i < 8; i++)
+	{
+		board[i] = (int *)malloc(8 * sizeof(int));
+	}
+	int b[8][8] =
+	{ -1,-2,-3,-4,-5,-3,-2,-1,  //quan trang so am, quan den so duong
+		-6,-6,-6,-6,-6,-6,-6,-6,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		6, 6, 6, 6, 6, 6, 6, 6,
+		1, 2, 3, 4, 5, 3, 2, 1 };
+	for (int i = 7; i >= 0; i--) {
+		for (int j = 0; j < 8; j++) {
+			board[i][j] = b[i][j];
+		}
+	}
+	return board;
 }
 
 
@@ -156,6 +180,7 @@ void xuLyChoThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHan
 
 void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
+	LPPER_HANDLE_DATA  des;
 	if (mess->code == ACCEPT) {
 		mess->code = SUCCESS;
 		mess->color = 1;
@@ -164,7 +189,7 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 
 		for (int i = 0; i < listAcc.size(); i++) {
 			if (strcmp(listAcc[i].userName, mess->opponent) == 0) {
-				LPPER_HANDLE_DATA  des = findHandleData(listAcc[i].sockNumber);
+				des = findHandleData(listAcc[i].sockNumber);
 				copyPerIoData(des->perIoData, perIoData);
 				Message* m = (Message*)des->perIoData->buffer;
 				m->color = -1;
@@ -172,14 +197,31 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 				break;
 			}
 		}
+		perHandleData->board = createNewBoard();
+		des->board = perHandleData->board;
+		perHandleData->opponent = des;
+		des->opponent = perHandleData;
+		perHandleData->turn = -1;
+		des->turn = -1;
+		perHandleData->color = 1;
+		des->color = -1;
 
 	}
 }
 void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
+	LPPER_HANDLE_DATA  des;
 	cout << "\nnhan duoc nuoc di: " << mess->move <<"   " <<perHandleData->socket<<endl;
-	sendMess(perIoData,perHandleData->socket);
-	perHandleData->n += 1;
+	if (check(mess->move, perHandleData->board, perHandleData->turn, perHandleData->color) == 1) {
+		updateBoard(mess->move, perHandleData->board);
+		perHandleData->turn *= -1;
+		perHandleData->opponent->turn *= -1;
+		des = perHandleData->opponent;
+		copyPerIoData(des->perIoData, perIoData);
+		sendMess(des->perIoData, des->socket);
+		printBoard(perHandleData->board);
+	}
+	recvMess(perIoData, perHandleData);
 }
 
 

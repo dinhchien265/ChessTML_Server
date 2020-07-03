@@ -49,6 +49,8 @@ typedef struct PerHandleData {
 	bool state;
 	LPPER_IO_OPERATION_DATA perIoData;
 	int **board;
+	int turn;
+	int color;
 	int n = 0;
 	PerHandleData * opponent; // thong tin cua doi thu
 } PER_HANDLE_DATA, *LPPER_HANDLE_DATA;

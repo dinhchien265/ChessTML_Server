@@ -316,3 +316,19 @@ void printBoard(int** board) {
 		printf("\n");
 	}
 }
+
+// return 0: game chua ket thuc
+// return 1: den thang
+// return -1: trang thang
+int checkEndGame(int **board) {
+	int b = 0, w = 0;
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 8; j++) {
+			if (board[i][j] == -5) w = 1;
+			if (board[i][j] == 5) b = 1;
+		}
+	}
+	if (w == 0) return 1;
+	if (b == 0) return -1;
+	return 0;
+}

@@ -8,6 +8,7 @@
 #include "DataIOServer.h"
 #include "Rule.h"
 #include <vector>
+#include<string>
 #define SERVER_PORT 5500
 #define SERVER_ADDR "127.0.0.1"
 #define BUFF_SIZE 2048
@@ -61,6 +62,26 @@ int **createNewBoard() {
 		}
 	}
 	return board;
+}
+
+void endGame(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData, int ret) {
+	Message *mess = (Message*)perIoData->buffer;
+	mess->messType = ENDGAME;
+	mess->code = WIN;
+	strcpy(mess->opponent, perHandleData->history);
+	sendMess(perIoData, perHandleData->socket);
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber == perHandleData->socket) listAcc[i].score += 3;
+	}
+	LPPER_HANDLE_DATA  des=perHandleData->opponent;
+	copyPerIoData(des->perIoData, perIoData);
+	mess = (Message*)des->perIoData->buffer;
+	mess->code = LOSE;
+	sendMess(des->perIoData, des->socket);
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber == des->socket) listAcc[i].sockNumber -= 3;
+	}
+	updateAccInfo();
 }
 
 
@@ -135,13 +156,28 @@ void handleLogout(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandle
 void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*) perIoData->buffer;
 	mess->opponent[0] = 0;
+	int ret = 0;
+	int st = 0;
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber == perHandleData->socket) st=i;
+	}
+	int first, last,n=listAcc.size();
+	if (st < 10) first = 0;
+	else first = st - 10;
+	if (st > n - 10) last = n;
+	else last = st + 10;
 	mess->code = SUCCESS;
-	for (account acc : listAcc) {
-		if (acc.sockNumber != 0 && acc.ranh == true) {
-			strcat(mess->opponent, acc.userName);
+	for (int i = first; i < last; i++) {
+		if (listAcc[i].sockNumber != 0 && listAcc[i].ranh == true) {
+			strcat(mess->opponent, listAcc[i].userName);
 			strcat(mess->opponent, " \0");
+			ret = 1;
 		}
 	}
+	if (ret == 1) {
+		mess->code = SUCCESS;
+	}
+	else mess->code = ERROR;
 	sendMess(perIoData, perHandleData->socket);
 	perHandleData->n += 1;
 }
@@ -157,7 +193,6 @@ void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandle
 			strcpy(name, listAcc[i].userName);
 		}
 	}
-
 	for (int i = 0; i < listAcc.size(); i++) {
 		if (strcmp(listAcc[i].userName,mess->opponent)==0) {
 			strcpy(mess->opponent, name);
@@ -205,41 +240,73 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 		des->turn = -1;
 		perHandleData->color = 1;
 		des->color = -1;
-
+		// set player not free
+		for (int i = 0; i < listAcc.size(); i++) {
+			if (listAcc[i].sockNumber == des->socket|| listAcc[i].sockNumber == perHandleData->socket) {
+				listAcc[i].ranh = false;
+			}
+		}
 	}
 }
 void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
 	LPPER_HANDLE_DATA  des;
+	des = perHandleData->opponent;
 	cout << "\nnhan duoc nuoc di: " << mess->move <<"   " <<perHandleData->socket<<endl;
 	if (check(mess->move, perHandleData->board, perHandleData->turn, perHandleData->color) == 1) {
 		updateBoard(mess->move, perHandleData->board);
-		perHandleData->turn *= -1;
-		perHandleData->opponent->turn *= -1;
-		des = perHandleData->opponent;
-		copyPerIoData(des->perIoData, perIoData);
-		sendMess(des->perIoData, des->socket);
-		printBoard(perHandleData->board);
+		int ret = checkEndGame(perHandleData->board);
+		if (ret == 0) {
+			perHandleData->turn *= -1;
+			perHandleData->opponent->turn *= -1;
+			copyPerIoData(des->perIoData, perIoData);
+			sendMess(des->perIoData, des->socket);
+			printBoard(perHandleData->board);
+		}
+		else {
+			endGame(perIoData, perHandleData, ret);
+			return;
+		}
 	}
+	strcat(perHandleData->history, mess->move);
+	strcat(des->history , mess->move);
 	recvMess(perIoData, perHandleData);
+}
+void handleRank(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	Message *mess = (Message*)perIoData->buffer;
+	string temp;
+	for (account acc : listAcc) {
+		temp += string(acc.userName);
+		temp += " ";
+		temp += to_string(acc.score);
+		temp += "\n";
+	}
+	for (int i = 0; i < temp.length(); i++) {
+		mess->opponent[i] = temp[i];
+	}
+	mess->opponent[temp.length()] = 0;
+	sendMess(perIoData, perHandleData->socket);
+}
+void handleXinthua(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+	Message *mess = (Message*)perIoData->buffer;
+	mess->messType = ENDGAME;
+	mess->code = LOSE;
+	strncpy(mess->opponent, perHandleData->history,200);
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber == perHandleData->socket) listAcc[i].score -= 3;
+	}
+	LPPER_HANDLE_DATA  des = perHandleData->opponent;
+	mess->code = WIN;
+	copyPerIoData(des->perIoData, perIoData);
+	mess = (Message*)des->perIoData->buffer;
+	sendMess(des->perIoData, des->socket);
+	for (int i = 0; i < listAcc.size(); i++) {
+		if (listAcc[i].sockNumber == des->socket) listAcc[i].sockNumber += 3;
+	}
+	updateAccInfo();
 }
 
 
-// handle message from client
-//void handleMess(char *mess, SOCKET s,bool& state) {
-//	Message *message = (Message*)mess;
-//	switch (message->messType)
-//	{
-//	case LOGIN:
-//		handleLogin(message, s,state);
-//		break;
-//	case LOGOUT:
-//		handleLogout(message, s,state);
-//		break;
-//	default:
-//		break;
-//	}
-//}
 void handleMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	char *mess = perIoData->buffer;
 	SOCKET s = perHandleData->socket;
@@ -268,6 +335,12 @@ void handleMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleDa
 		break;
 	case GUI_NUOC_DI:
 		xuLyNuocDi(perIoData, perHandleData);
+		break;
+	case RANK:
+		handleRank(perIoData, perHandleData);
+		break;
+	case Xin_thua:
+		handleXinthua(perIoData, perHandleData);
 		break;
 	default:
 		break;

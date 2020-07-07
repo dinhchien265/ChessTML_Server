@@ -6,6 +6,7 @@
 #include <WS2tcpip.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <vector>
 #define SERVER_PORT 5500
 #define SERVER_ADDR "127.0.0.1"
@@ -17,8 +18,8 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 
-enum messType { LOGIN = 5, LOGOUT = 8, TIM_NGUOI_CHOI, THACH_DAU, CHO_THACH_DAU, TRA_LOI_THACH_DAU, GUI_NUOC_DI };
-enum code { SUCCESS = 0, INCORRECT_USER_NAME_OR_PASSWORD = 10, ACC_HAS_BLOCKED = 12, LOGGED_IN, NOT_LOGGED_IN, ALLREADY_LOGGED_IN, ACCEPT, REFUSE };
+enum messType { LOGIN = 5, LOGOUT = 8, TIM_NGUOI_CHOI, THACH_DAU, CHO_THACH_DAU, TRA_LOI_THACH_DAU, GUI_NUOC_DI, ENDGAME, Xin_thua,RANK };
+enum code { SUCCESS = 1, INCORRECT_USER_NAME_OR_PASSWORD = 10, ACC_HAS_BLOCKED = 12, LOGGED_IN, NOT_LOGGED_IN, ALLREADY_LOGGED_IN, ACCEPT, REFUSE, WIN, LOSE };
 
 
 struct Message {
@@ -27,7 +28,7 @@ struct Message {
 	char userName[30];
 	char passWord[30];
 	char move[5];
-	char opponent[60]; // name of opponent
+	char opponent[200]; // name of opponent
 	int color;
 };
 
@@ -48,6 +49,7 @@ typedef struct PerHandleData {
 	SOCKET socket;
 	bool state;
 	LPPER_IO_OPERATION_DATA perIoData;
+	char history[200];
 	int **board;
 	int turn;
 	int color;
@@ -62,6 +64,7 @@ struct account {
 	char userName[30];
 	char password[30];
 	int isBlocked;
+	int score;
 	int numberWrongPass = 0;
 	int sockNumber = 0;
 	bool ranh = false;
@@ -69,61 +72,54 @@ struct account {
 };
 
 vector<account> listAcc;
+
+int compare(const void* a, const void* b) {
+	account *acc1, *acc2;
+	acc1 = (account*)a;
+	acc2 = (account*)b;
+	return acc1->score - acc2->score;
+}
+
 // get account info from file 
 void getAccInfo() {
 	fstream myFile("account.txt");
 	while (!myFile.eof()) {
 		account accTemp;
-		myFile >> accTemp.userName >> accTemp.password >> accTemp.isBlocked;
+		myFile >> accTemp.userName >> accTemp.password >> accTemp.isBlocked >> accTemp.score;
 		if (strlen(accTemp.userName) == 0) break;
 		listAcc.push_back(accTemp);
 	}
 	myFile.close();
+	for (int i = 0; i < listAcc.size(); i++) {
+		for (int j = 1; j < listAcc.size(); j++) {
+			if (listAcc[j - 1].score < listAcc[j].score) {
+				account temp = listAcc[j - 1];
+				listAcc[j - 1] = listAcc[j];
+				listAcc[j] = temp;
+			}
+		}
+	}
 }
 // update account info 
 void updateAccInfo() {
+	for (int i = 0; i < listAcc.size(); i++) {
+		for (int j = 1; j < listAcc.size(); j++) {
+			if (listAcc[j - 1].score < listAcc[j].score) {
+				account temp = listAcc[j - 1];
+				listAcc[j - 1] = listAcc[j];
+				listAcc[j] = temp;
+			}
+		}
+	}
 	fstream myFile("account.txt");
 	myFile.clear();
 	myFile.seekp(0);
 	for (int i = 0; i < listAcc.size(); i++) {
-		myFile << listAcc[i].userName << " " << listAcc[i].password << " " << listAcc[i].isBlocked << endl;
+		myFile << listAcc[i].userName << " " << listAcc[i].password << " " << listAcc[i].isBlocked << " " << listAcc[i].score << endl;
 	}
-	listAcc.clear();
 	myFile.close();
 }
-// wrapped of send 
-//int sendMessage(SOCKET s, char*buff, int len) {
-//
-//	int nLeft, idx, ret;
-//	nLeft = len;
-//	idx = 0;
-//
-//	while (nLeft > 0) {
-//		ret = send(s, &buff[idx], nLeft, 0);
-//		if (ret == SOCKET_ERROR) {
-//
-//		}
-//		nLeft -= ret;
-//		idx += ret;
-//	}
-//	return len;
-//}
-//// wrapped of recv
-//int recvMessage(SOCKET s, char*buff, int len) {
-//	int ret, nLeft = len, idx;
-//	idx = 0;
-//
-//	while (nLeft > 0)
-//	{
-//		ret = recv(s, &buff[idx], nLeft, 0);
-//		if (ret == SOCKET_ERROR) {
-//			return  SOCKET_ERROR;
-//		}
-//		nLeft -= ret;
-//		idx += ret;
-//	}
-//	return len;
-//}
+
 
 void sendMess(LPPER_IO_OPERATION_DATA perIoData, SOCKET s) {
 	DWORD transferredBytes = sizeof(Message);

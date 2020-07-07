@@ -25,6 +25,7 @@ unsigned __stdcall serverWorkerThread(LPVOID CompletionPortID);
 int _tmain(int argc, _TCHAR* argv[])
 {
 	getAccInfo();
+	updateAccInfo();
 
 	SOCKADDR_IN serverAddr;
 	SOCKET listenSock, acceptSock;
@@ -141,6 +142,10 @@ unsigned __stdcall serverWorkerThread(LPVOID completionPortID)
 		if (GetQueuedCompletionStatus(completionPort, &transferredBytes,
 			(LPDWORD)&perHandleData, (LPOVERLAPPED *)&perIoData, INFINITE) == 0) {
 			printf("GetQueuedCompletionStatus() failed with error %d\n", GetLastError());
+			printf("%d ngat ket noi", perHandleData->socket);
+			for (int i = 0; i < listAcc.size(); i++) {
+				if (listAcc[i].sockNumber == perHandleData->socket) listAcc[i].sockNumber =0;
+			}
 			return 0;
 		}
 		// Check to see if an error has occurred on the socket and if so

@@ -26,7 +26,7 @@ LPPER_HANDLE_DATA findHandleData(SOCKET s) {
 	}
 	return NULL;
 }
-
+// copy a periodata to another
 void copyPerIoData(LPPER_IO_OPERATION_DATA des, LPPER_IO_OPERATION_DATA res) {
 	des->bufLen = res->bufLen;
 	des->recvBytes = res->recvBytes;
@@ -63,12 +63,12 @@ int **createNewBoard() {
 	}
 	return board;
 }
-
+//  handle end game case
 void endGame(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData, int ret) {
 	Message *mess = (Message*)perIoData->buffer;
 	mess->messType = ENDGAME;
 	mess->code = WIN;
-	strcpy(mess->opponent, perHandleData->history);
+	strcpy(mess->data, perHandleData->history);
 	sendMess(perIoData, perHandleData->socket);
 	for (int i = 0; i < listAcc.size(); i++) {
 		if (listAcc[i].sockNumber == perHandleData->socket) listAcc[i].score += 3;
@@ -84,7 +84,7 @@ void endGame(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData,
 	updateAccInfo();
 }
 
-
+//handle login message
 void handleLogin(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	
 	Message *mess =(Message*) perIoData->buffer;
@@ -131,7 +131,7 @@ void handleLogin(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleD
 	sendMess(perIoData, perHandleData->socket);
 	perHandleData->n += 1;
 }
-
+// handle logout message
 void handleLogout(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 
 	Message *mess = (Message*)perIoData->buffer;
@@ -153,9 +153,10 @@ void handleLogout(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandle
 	sendMess(perIoData, perHandleData->socket);
 	perHandleData->n += 1;
 }
-void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+// handle find opponent messgae
+void handleFindOpponent(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*) perIoData->buffer;
-	mess->opponent[0] = 0;
+	mess->data[0] = 0;
 	int ret = 0;
 	int st = 0;
 	for (int i = 0; i < listAcc.size(); i++) {
@@ -169,8 +170,8 @@ void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHa
 	mess->code = SUCCESS;
 	for (int i = first; i < last; i++) {
 		if (listAcc[i].sockNumber != 0 && listAcc[i].ranh == true) {
-			strcat(mess->opponent, listAcc[i].userName);
-			strcat(mess->opponent, " \0");
+			strcat(mess->data, listAcc[i].userName);
+			strcat(mess->data, " \0");
 			ret = 1;
 		}
 	}
@@ -181,21 +182,20 @@ void xuLyTimNguoiChoi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHa
 	sendMess(perIoData, perHandleData->socket);
 	perHandleData->n += 1;
 }
-
-void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+// handle challenger message
+void handleChallenger(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	
 	Message *mess = (Message*)perIoData->buffer;
 	char name[30];
 
-	//lay ten cua thang thach dau
 	for (int i = 0; i < listAcc.size(); i++) {
 		if (listAcc[i].sockNumber==perHandleData->socket) {
 			strcpy(name, listAcc[i].userName);
 		}
 	}
 	for (int i = 0; i < listAcc.size(); i++) {
-		if (strcmp(listAcc[i].userName,mess->opponent)==0) {
-			strcpy(mess->opponent, name);
+		if (strcmp(listAcc[i].userName,mess->data)==0) {
+			strcpy(mess->data, name);
 			LPPER_HANDLE_DATA  des=findHandleData(listAcc[i].sockNumber);
 			copyPerIoData(des->perIoData, perIoData);
 			sendMess(des->perIoData, des->socket);
@@ -204,7 +204,8 @@ void xuLyThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandle
 	}
 	recvMess(perIoData, perHandleData);
 }
-void xuLyChoThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+// handle wait challenger message
+void handleWaitChallenger(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	for (int i = 0; i < listAcc.size(); i++) {
 		if (listAcc[i].sockNumber == perHandleData->socket) {
 			listAcc[i].ranh = true;
@@ -212,8 +213,8 @@ void xuLyChoThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHan
 	}
 	recvMess(perIoData, perHandleData);
 }
-
-void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+// handle reply challenger message
+void handleReplyChallenger(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
 	LPPER_HANDLE_DATA  des;
 	if (mess->code == ACCEPT) {
@@ -223,7 +224,7 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 		perHandleData->n += 1;
 
 		for (int i = 0; i < listAcc.size(); i++) {
-			if (strcmp(listAcc[i].userName, mess->opponent) == 0) {
+			if (strcmp(listAcc[i].userName, mess->data) == 0) {
 				des = findHandleData(listAcc[i].sockNumber);
 				copyPerIoData(des->perIoData, perIoData);
 				Message* m = (Message*)des->perIoData->buffer;
@@ -248,7 +249,8 @@ void xuLyTraLoiThachDau(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA per
 		}
 	}
 }
-void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+//handle move message
+void handleMove(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
 	LPPER_HANDLE_DATA  des;
 	des = perHandleData->opponent;
@@ -272,6 +274,7 @@ void xuLyNuocDi(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleDa
 	strcat(des->history , mess->move);
 	recvMess(perIoData, perHandleData);
 }
+// handle get rank message
 void handleRank(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
 	string temp;
@@ -282,16 +285,17 @@ void handleRank(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleDa
 		temp += "\n";
 	}
 	for (int i = 0; i < temp.length(); i++) {
-		mess->opponent[i] = temp[i];
+		mess->data[i] = temp[i];
 	}
-	mess->opponent[temp.length()] = 0;
+	mess->data[temp.length()] = 0;
 	sendMess(perIoData, perHandleData->socket);
 }
-void handleXinthua(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
+// handle serrender message
+void handleSurrender(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	Message *mess = (Message*)perIoData->buffer;
 	mess->messType = ENDGAME;
 	mess->code = LOSE;
-	strncpy(mess->opponent, perHandleData->history,200);
+	strncpy(mess->data, perHandleData->history,200);
 	for (int i = 0; i < listAcc.size(); i++) {
 		if (listAcc[i].sockNumber == perHandleData->socket) listAcc[i].score -= 3;
 	}
@@ -306,7 +310,7 @@ void handleXinthua(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandl
 	updateAccInfo();
 }
 
-
+// handle message from client
 void handleMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleData) {
 	char *mess = perIoData->buffer;
 	SOCKET s = perHandleData->socket;
@@ -321,26 +325,26 @@ void handleMess(LPPER_IO_OPERATION_DATA perIoData, LPPER_HANDLE_DATA perHandleDa
 	case LOGOUT:
 		handleLogout(perIoData, perHandleData);
 		break;
-	case TIM_NGUOI_CHOI:
-		xuLyTimNguoiChoi(perIoData, perHandleData);
+	case FIND_OPPONENT:
+		handleFindOpponent(perIoData, perHandleData);
 		break;
-	case CHO_THACH_DAU:
-		xuLyChoThachDau(perIoData, perHandleData);
+	case WAIT_CHALLENGER:
+		handleWaitChallenger(perIoData, perHandleData);
 		break;
-	case THACH_DAU:
-		xuLyThachDau(perIoData, perHandleData);
+	case CHALLENGER:
+		handleChallenger(perIoData, perHandleData);
 		break;
-	case TRA_LOI_THACH_DAU:
-		xuLyTraLoiThachDau(perIoData, perHandleData);
+	case REP_CHALLENGER:
+		handleReplyChallenger(perIoData, perHandleData);
 		break;
-	case GUI_NUOC_DI:
-		xuLyNuocDi(perIoData, perHandleData);
+	case SEND_MOVE:
+		handleMove(perIoData, perHandleData);
 		break;
 	case RANK:
 		handleRank(perIoData, perHandleData);
 		break;
-	case Xin_thua:
-		handleXinthua(perIoData, perHandleData);
+	case SURRENDER:
+		handleSurrender(perIoData, perHandleData);
 		break;
 	default:
 		break;

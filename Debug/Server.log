@@ -1,4 +1,4 @@
-﻿Build started 7/7/2020 10:06:04 PM.
+﻿Build started 7/7/2020 10:34:31 PM.
      1>Project "C:\Users\DinhChien\Documents\Visual Studio 2015\Projects\testSFML\Server\Server.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:prompt Server.cpp
@@ -15,10 +15,10 @@
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(119): note: see declaration of 'strcpy'
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(99): warning C4018: '<': signed/unsigned mismatch
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(146): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(161): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(172): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-         c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(90): note: see declaration of 'strcat'
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(162): warning C4018: '<': signed/unsigned mismatch
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(173): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+         c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(90): note: see declaration of 'strcat'
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(174): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(90): note: see declaration of 'strcat'
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(191): warning C4018: '<': signed/unsigned mismatch
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(196): warning C4018: '<': signed/unsigned mismatch
@@ -26,17 +26,17 @@
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(119): note: see declaration of 'strcpy'
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(198): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(119): note: see declaration of 'strcpy'
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(208): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(225): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(244): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(271): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(209): warning C4018: '<': signed/unsigned mismatch
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(226): warning C4018: '<': signed/unsigned mismatch
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(245): warning C4018: '<': signed/unsigned mismatch
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(273): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(90): note: see declaration of 'strcat'
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(272): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(274): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(90): note: see declaration of 'strcat'
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(284): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(295): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(303): warning C4018: '<': signed/unsigned mismatch
-     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(294): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(287): warning C4018: '<': signed/unsigned mismatch
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(299): warning C4018: '<': signed/unsigned mismatch
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(307): warning C4018: '<': signed/unsigned mismatch
+     1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\bussinessserver.h(298): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
          c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\string.h(346): note: see declaration of 'strncpy'
      1>c:\users\dinhchien\documents\visual studio 2015\projects\testsfml\server\server.cpp(146): warning C4018: '<': signed/unsigned mismatch
        Link:
@@ -47,4 +47,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.30
+Time Elapsed 00:00:02.29

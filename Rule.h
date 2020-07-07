@@ -6,7 +6,7 @@
 
 enum piece { wrook = -1, brook = 1, wknight = -2, bknight = 2, wbishop = -3, bbishop = 3, wqueen = -4, bqueen = 4, wking = -5, bking = 5, wpawn = -6, bpawn = 6 };
 
-
+// update broad after a move
 void updateBoard(std::string str, int** board) {
 	int x1 = str[0] - 97;
 	int y1 = str[1] - 49;
@@ -16,7 +16,7 @@ void updateBoard(std::string str, int** board) {
 	board[y1][x1] = 0;
 }
 
-//return 1: nuoc di dung, return 0: nuoc di sai
+//check a move
 int check(std::string str, int** board, int turn,int color) {
 	if (turn != color) return 0;
 	int x1 = str[0] - 97;
@@ -304,7 +304,7 @@ int check(std::string str, int** board, int turn,int color) {
 
 	return 0;
 }
-
+//print board to the console
 void printBoard(int** board) {
 	std::cout << std::endl;
 	for (int i = 7; i >= 0; i--) {
@@ -317,9 +317,7 @@ void printBoard(int** board) {
 	}
 }
 
-// return 0: game chua ket thuc
-// return 1: den thang
-// return -1: trang thang
+//check end game
 int checkEndGame(int **board) {
 	int b = 0, w = 0;
 	for (int i = 0; i < 8; i++) {
